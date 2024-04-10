@@ -3,7 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-
+#include <dirent.h>
 int main()
 {
     // Création de la socket
@@ -42,18 +42,54 @@ int main()
     socklen_t client_address_len = sizeof(client_address);
 
     // Boucle pour accepter les connexions en boucle
-    while ((client_socket = accept(server_socket, (struct sockaddr *)&client_address, &client_address_len)))
+    while (1)
     {
+        client_socket = accept(server_socket, (struct sockaddr *)&client_address, &client_address_len);
         printf("Nouvelle connexion acceptée\n");
 
         // Traiter la connexion (lecture/écriture)
+
         char buffer[1024] = {0};
         read(client_socket, buffer, 1024);
         printf("Message du client : %s\n", buffer);
-        write(client_socket, "Message reçu par le serveur", strlen("Message reçu par le serveur"));
+        if (strcmp(buffer, "ls") == 0)
+        {
+            // Ouvrir le répertoire ./data_serveur
+            DIR *dir = opendir("./data_serveur");
+            if (dir == NULL)
+            {
+                perror("Erreur lors de l'ouverture du répertoire");
+            }
+
+            // Lire les entrées du répertoire
+            struct dirent *entry;
+            char liste[1024] = {0};
+            while ((entry = readdir(dir)) != NULL)
+            {
+                // Ignorer les entrées spéciales . et ..
+                if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+                {
+                    continue;
+                }
+
+                // Afficher le nom du fichier
+                strcat(liste, entry->d_name);
+                strcat(liste, "\n");
+            }
+            write(client_socket, liste, strlen(liste));
+            // Fermer le répertoire
+            closedir(dir);
+        }
+        if (strcmp(buffer, "exit") == 0)
+        {
+            printf("Fermeture de la connexion\n");
+            close(client_socket);
+            break;
+        }
 
         // Fermer la socket du client
         close(client_socket);
+        printf("Connexion fermée\n");
     }
 
     // Fermer la socket du serveur
