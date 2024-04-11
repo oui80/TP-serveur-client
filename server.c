@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <dirent.h>
+
+
 int main()
 {
     // Création de la socket
@@ -80,6 +82,46 @@ int main()
             // Fermer le répertoire
             closedir(dir);
         }
+
+        int l = 3;
+        
+        char commande[l + 1];
+        strncpy(commande, buffer, l);
+        commande[l] = '\0';
+
+        if (strcmp(commande, "put") == 0)
+        {   
+            int len = strlen(buffer);
+            char filename[len - l];
+            
+            strncpy(filename, buffer + l + 1, len - l - 1);
+            filename[len - l -1] = '\0';
+
+            // on concatène le chemin du fichier et le filename
+            char f[1024] = "./data_serveur/";
+            strcat(f, filename);
+            printf("Nom du fichier : %s\n", filename);
+            printf("Chemin du fichier : %s\n", f);
+
+            // Créer un fichier dans ./data_serveur
+            FILE *file = fopen(f, "w");
+            if (file == NULL)
+            {
+                perror("Erreur lors de la création du fichier");
+                exit(EXIT_FAILURE);
+            }
+            
+            // écriture du buffer dans le fichier
+            size_t read_bytes;
+            while ((read_bytes = read(client_socket, buffer, 1024)) > 0)
+            {
+                fwrite(buffer, 1, read_bytes, file);
+            }
+
+            // Fermer le fichier
+            fclose(file);
+        }
+
         if (strcmp(buffer, "exit") == 0)
         {
             printf("Fermeture de la connexion\n");
