@@ -32,6 +32,7 @@ void get_clavier(char *message)
     fgets(message, 1024, stdin);
     message[strlen(message) - 1] = '\0';
 }
+
 int connexion()
 {
     // Création de la socket
@@ -62,6 +63,45 @@ int connexion()
     }
     return client_socket;
 }
+
+#define BUFFER_SIZE 1024 // Taille du tampon de lecture/écriture
+
+void receive_file(int client_socket, const char *filename)
+{
+    char filepath[256];
+    snprintf(filepath, sizeof(filepath), "./data_client/%s", filename);
+
+    // Ouvrir le fichier en mode binaire pour éviter la transformation de fin de ligne
+    FILE *file = fopen(filepath, "wb");
+    if (file == NULL)
+    {
+        perror("Erreur lors de l'ouverture du fichier");
+        return;
+    }
+
+    char buffer[BUFFER_SIZE]; // Tampon de réception des données
+
+    ssize_t bytes_received;
+    while ((bytes_received = recv(client_socket, buffer, BUFFER_SIZE, 0)) > 0)
+    {
+        fwrite(buffer, 1, bytes_received, file); // Écrire les données dans le fichier
+    }
+
+    if (bytes_received < 0)
+    {
+        perror("Erreur lors de la réception des données");
+    }
+
+    fclose(file);
+
+    if (bytes_received == 0)
+    {
+        printf("Fichier %s téléchargé avec succès\n", filename);
+    }
+
+    close(client_socket);
+}
+
 int main()
 {
     int client_socket;
@@ -137,21 +177,9 @@ int main()
                 client_socket = connexion();
                 printf("Envoi de la commande get au serveur %s\n", message);
                 send_message(client_socket, message);
-                char buffer[1024] = {0};
-                receive_message(client_socket, buffer);
-                if (!strcmp(buffer, "Fichier introuvable"))
-                {
-                    printf("Fichier introuvable\n");
-                }
-                else
-                {
-                    FILE *file = fopen(filename, "w");
-                    fprintf(file, "%s", buffer);
-                    fclose(file);
-                    printf("Fichier %s téléchargé\n", filename);
-                }
+                receive_file(client_socket, filename);
+                printf("Fichier %s téléchargé\n", filename);
                 close(client_socket);
-                free(commande);
             }
         }
     }

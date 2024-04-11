@@ -128,11 +128,27 @@ int main()
             }
             else
             {
-                // Lire le contenu du fichier
-                char content[100] = {0};
-                fread(content, 1, 100, file);
-                printf("%s\n", content);
-                write(client_socket, content, strlen(content));
+                char buffer[1024];
+
+                // Lire et envoyer successivement les paquets de données du fichier
+                size_t bytes_read;
+                do
+                {
+                    bytes_read = fread(buffer, 1, 1024, file); // Lire un paquet de données du fichier
+                    if (bytes_read < 1024 && ferror(file))
+                    {
+                        perror("Erreur lors de la lecture du fichier");
+                        fclose(file);
+                        return 1;
+                    }
+                    // Envoyer le paquet de données au client via le socket
+                    if (write(client_socket, buffer, bytes_read) < 0)
+                    {
+                        perror("Erreur lors de l'envoi des données au client");
+                        fclose(file);
+                        return 1;
+                    }
+                } while (bytes_read == 1024);
                 fclose(file);
             }
         }
