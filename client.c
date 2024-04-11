@@ -150,6 +150,20 @@ int main()
                 send_message(client_socket, message);
 
                 printf("Nom du fichier : %s\n", filename);
+
+                // on recoit la réponse du serveur
+                receive_message(client_socket, buffer);
+                if (!strcmp(buffer, "ready"))
+                {
+                    printf("Envoi du fichier %s\n", filename);
+                }
+                else
+                {
+                    printf("Erreur lors de l'envoi du fichier\n");
+                    close(client_socket);
+                    continue;
+                }
+
                 FILE *file = fopen(filename, "r");
                 if (file == NULL)
                 {

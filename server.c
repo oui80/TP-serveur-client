@@ -52,7 +52,6 @@ int main()
 
         char buffer[1024] = {0};
         read(client_socket, buffer, 1024);
-        printf("Message du client : %s\n", buffer);
         if (strcmp(buffer, "ls") == 0)
         {
             // Ouvrir le répertoire ./data_serveur
@@ -80,6 +79,8 @@ int main()
             write(client_socket, liste, strlen(liste));
             // Fermer le répertoire
             closedir(dir);
+
+            printf("Message du client : %s\n", buffer);
         }
 
         int l = 3;
@@ -96,9 +97,14 @@ int main()
         filename[len - l - 1] = '\0';
         char path[1024] = "./data_serveur/";
         strcat(path, filename);
+        
+
         if (strcmp(commande, "put") == 0)
         {
-            
+            // on envoie ready au client
+            write(client_socket, "ready", 5);
+
+
             // création du fichier
             FILE *file = fopen(path, "w");
             if (file == NULL)
@@ -116,6 +122,8 @@ int main()
 
             // Fermer le fichier
             fclose(file);
+
+            printf("Message du client : %s\n", commande);
         }
         else if (!strcmp(commande, "get"))
         {
@@ -150,6 +158,7 @@ int main()
                     }
                 } while (bytes_read == 1024);
                 fclose(file);
+                printf("Message du client : %s\n", commande);
             }
         }
 
@@ -157,6 +166,7 @@ int main()
         {
             printf("Fermeture de la connexion\n");
             close(client_socket);
+            printf("Message du client : %s\n", buffer);
             break;
         }
 
