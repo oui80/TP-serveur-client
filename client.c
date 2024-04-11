@@ -148,14 +148,16 @@ int main()
             {
                 client_socket = connexion();
                 send_message(client_socket, message);
+                char filepath[256];
+                snprintf(filepath, sizeof(filepath), "./data_client/%s", filename);
 
-                printf("Nom du fichier : %s\n", filename);
+                printf("Nom du fichier : %s\n", filepath);
 
                 // on recoit la réponse du serveur
                 receive_message(client_socket, buffer);
                 if (!strcmp(buffer, "ready"))
                 {
-                    printf("Envoi du fichier %s\n", filename);
+                    printf("Envoi du fichier %s\n", filepath);
                 }
                 else
                 {
@@ -164,7 +166,7 @@ int main()
                     continue;
                 }
 
-                FILE *file = fopen(filename, "r");
+                FILE *file = fopen(filepath, "r");
                 if (file == NULL)
                 {
                     perror("Erreur lors de l'ouverture du fichier");
@@ -187,7 +189,6 @@ int main()
             }
             else if (!strcmp(commande, "get"))
             {
-
                 client_socket = connexion();
                 printf("Envoi de la commande get au serveur %s\n", message);
                 send_message(client_socket, message);
