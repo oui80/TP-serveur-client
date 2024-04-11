@@ -28,12 +28,8 @@ int receive_message(int client_socket, char *buffer)
 void get_clavier(char *message)
 {
     printf(">> ");
-    fgets(message, sizeof(message), stdin); // Utilisation de fgets() pour lire une ligne entière
-
-    // Supprimer le caractère de retour à la ligne '\n' lu par fgets()
-    size_t len = strlen(message);
-    if (len > 0 && message[len - 1] == '\n')
-        message[len - 1] = '\0';
+    fgets(message, 1024, stdin);
+    message[strlen(message) - 1] = '\0';
 }
 int connexion()
 {
@@ -89,6 +85,75 @@ int main()
             receive_message(client_socket, buffer);
             close(client_socket);
             printf("fichier présent : \n%s\n", buffer);
+        }
+        else
+        {
+            printf("Message envoyé au serveur : %s\n", message);
+            char *token;
+            char filename[100];
+            char commande[100];
+
+            // Utilisation de strtok() pour extraire les deux mots
+            token = strtok(message, " "); // Divise la chaîne par les espaces
+            if (token == NULL)
+            {
+                printf("Erreur lors de l'extraction du premier mot.\n");
+                return 1;
+            }
+            strcpy(commande, token); // Copie le premier mot dans la variable command
+
+            token = strtok(NULL, " "); // Récupère le deuxième mot
+            if (token == NULL)
+            {
+                printf("Erreur lors de l'extraction du deuxième mot.\n");
+                return 1;
+            }
+            strcpy(filename, token); // Copie le deuxième mot dans la variable filename
+
+            // Affichage des deux mots extraits
+            printf("Commande : %s\n", commande);
+            printf("Nom du fichier : %s\n", filename);
+
+            if (!strcmp(commande, "get"))
+            {
+
+                client_socket = connexion();
+                send_message(client_socket, message);
+                receive_message(client_socket, buffer);
+                if (!strcmp(buffer, "Fichier introuvable"))
+                {
+                    printf("Fichier introuvable\n");
+                }
+                else
+                {
+
+                    FILE *file = fopen(filename, "w");
+                    fprintf(file, "%s", buffer);
+                    fclose(file);
+                    printf("Fichier %s téléchargé\n", filename);
+                }
+                close(client_socket);
+            }
+            else if (!strcmp(message, "put"))
+            {
+                char filename[100];
+                FILE *file = fopen(filename, "r");
+                if (file == NULL)
+                {
+                    printf("Fichier introuvable\n");
+                    continue;
+                }
+                client_socket = connexion();
+                send_message(client_socket, message);
+                char c;
+                while ((c = fgetc(file)) != EOF)
+                {
+                    send(client_socket, &c, 1, 0);
+                }
+                close(client_socket);
+                fclose(file);
+                printf("Fichier %s envoyé\n", filename);
+            }
         }
     }
     // Fermeture de la socket du client

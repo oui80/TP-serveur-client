@@ -87,6 +87,43 @@ int main()
             break;
         }
 
+        if (!strcmp(buffer, "get"))
+        {
+            // Ouvrir le fichier demandé
+            char filename[10000];
+            read(client_socket, filename, 10000);
+            FILE *file = fopen(strcat("./data/", filename), "r");
+            if (file == NULL)
+            {
+                write(client_socket, "Fichier introuvable", 20);
+            }
+            else
+            {
+                // Lire le contenu du fichier
+                char content[100] = {0};
+                fread(content, 1, 100, file);
+                printf("%s\n", content);
+                write(client_socket, content, strlen(content));
+                fclose(file);
+            }
+        }
+        else if (!strcmp(buffer, "put"))
+        {
+            // Ouvrir le fichier en écriture
+            char filename[100];
+            FILE *file = fopen(filename, "w");
+            if (file == NULL)
+            {
+                perror("Erreur lors de l'ouverture du fichier");
+            }
+
+            // Lire le contenu du fichier envoyé par le client
+            read(client_socket, buffer, 1024);
+            fprintf(file, "%s", buffer);
+            fclose(file);
+            printf("Fichier %s téléchargé\n", filename);
+        }
+
         // Fermer la socket du client
         close(client_socket);
         printf("Connexion fermée\n");
@@ -94,6 +131,7 @@ int main()
 
     // Fermer la socket du serveur
     close(server_socket);
+    printf("Serveur arrêté\n");
 
     return 0;
 }
