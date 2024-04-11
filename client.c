@@ -30,7 +30,7 @@ void get_clavier(char *message)
 {
     printf(">> ");
     fgets(message, 1024, stdin);
-    message[strcspn(message, "\n")] = 0;
+    message[strlen(message) - 1] = '\0';
 }
 int connexion()
 {
@@ -78,6 +78,7 @@ int main()
             close(client_socket);
             break;
         }
+
         if (!strcmp(message, "ls"))
         {
 
@@ -87,51 +88,73 @@ int main()
             close(client_socket);
             printf("fichier présent : \n%s\n", buffer);
         }
-        
-        int l = 3;
-        
-        char commande[l + 1];
-        strncpy(commande, message, l);
-        commande[l] = '\0';
-
-        if (!strcmp(commande, "put"))
+        else
         {
-            client_socket = connexion();
-            send_message(client_socket, message);
+            int l = 3;
 
-            // recherche du fichier
+            char commande[l + 1];
+            strncpy(commande, message, l);
+            commande[l] = '\0';
+
+            // nom du fichier
             int len = strlen(message);
-            char filename[len - l +1];
-            
+            char filename[len - l + 1];
+
             strncpy(filename, message + l + 1, len - l - 1);
-            filename[len - l -1] = '\0';
+            filename[len - l - 1] = '\0';
             filename[len - l] = '\n';
 
-            printf("Nom du fichier : %s\n", filename);
-            FILE *file = fopen(filename, "r");
-            if (file == NULL)
+            if (!strcmp(commande, "put"))
             {
-                perror("Erreur lors de l'ouverture du fichier");
-                exit(EXIT_FAILURE);
-            }
+                client_socket = connexion();
+                send_message(client_socket, message);
 
-            // Envoi du fichier
-            char buffer[1024] = {0};
-            size_t read_bytes;
-            while ((read_bytes = fread(buffer, 1, 1024, file)) > 0)
-            {
-                if (send(client_socket, buffer, read_bytes, 0) < 0)
+                printf("Nom du fichier : %s\n", filename);
+                FILE *file = fopen(filename, "r");
+                if (file == NULL)
                 {
-                    perror("Échec de l'envoi du fichier");
+                    perror("Erreur lors de l'ouverture du fichier");
                     exit(EXIT_FAILURE);
                 }
-            }
-            fclose(file);
-            close(client_socket);
-        }
-        
-    }
-    // Fermeture de la socket du client
 
+                // Envoi du fichier
+                char buffer[1024] = {0};
+                size_t read_bytes;
+                while ((read_bytes = fread(buffer, 1, 1024, file)) > 0)
+                {
+                    if (send(client_socket, buffer, read_bytes, 0) < 0)
+                    {
+                        perror("Échec de l'envoi du fichier");
+                        exit(EXIT_FAILURE);
+                    }
+                }
+                fclose(file);
+                close(client_socket);
+            }
+            else if (!strcmp(commande, "get"))
+            {
+
+                client_socket = connexion();
+                printf("Envoi de la commande get au serveur %s\n", message);
+                send_message(client_socket, message);
+                char buffer[1024] = {0};
+                receive_message(client_socket, buffer);
+                if (!strcmp(buffer, "Fichier introuvable"))
+                {
+                    printf("Fichier introuvable\n");
+                }
+                else
+                {
+                    FILE *file = fopen(filename, "w");
+                    fprintf(file, "%s", buffer);
+                    fclose(file);
+                    printf("Fichier %s téléchargé\n", filename);
+                }
+                close(client_socket);
+                free(commande);
+            }
+        }
+    }
     return 0;
 }
+// Fermeture de la socket du client

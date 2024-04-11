@@ -5,7 +5,6 @@
 #include <arpa/inet.h>
 #include <dirent.h>
 
-
 int main()
 {
     // Création de la socket
@@ -84,33 +83,30 @@ int main()
         }
 
         int l = 3;
-        
+
         char commande[l + 1];
         strncpy(commande, buffer, l);
         commande[l] = '\0';
 
+        // nom du fichier
+        int len = strlen(buffer);
+        char filename[len - l];
+
+        strncpy(filename, buffer + l + 1, len - l - 1);
+        filename[len - l - 1] = '\0';
+        char path[1024] = "./data_serveur/";
+        strcat(path, filename);
         if (strcmp(commande, "put") == 0)
-        {   
-            int len = strlen(buffer);
-            char filename[len - l];
+        {
             
-            strncpy(filename, buffer + l + 1, len - l - 1);
-            filename[len - l -1] = '\0';
-
-            // on concatène le chemin du fichier et le filename
-            char f[1024] = "./data_serveur/";
-            strcat(f, filename);
-            printf("Nom du fichier : %s\n", filename);
-            printf("Chemin du fichier : %s\n", f);
-
-            // Créer un fichier dans ./data_serveur
-            FILE *file = fopen(f, "w");
+            // création du fichier
+            FILE *file = fopen(path, "w");
             if (file == NULL)
             {
                 perror("Erreur lors de la création du fichier");
                 exit(EXIT_FAILURE);
             }
-            
+
             // écriture du buffer dans le fichier
             size_t read_bytes;
             while ((read_bytes = read(client_socket, buffer, 1024)) > 0)
@@ -120,6 +116,25 @@ int main()
 
             // Fermer le fichier
             fclose(file);
+        }
+        else if (!strcmp(commande, "get"))
+        {
+            // Ouvrir le fichier demandé
+
+            FILE *file = fopen(path, "r");
+            if (file == NULL)
+            {
+                write(client_socket, "Fichier introuvable", 20);
+            }
+            else
+            {
+                // Lire le contenu du fichier
+                char content[100] = {0};
+                fread(content, 1, 100, file);
+                printf("%s\n", content);
+                write(client_socket, content, strlen(content));
+                fclose(file);
+            }
         }
 
         if (strcmp(buffer, "exit") == 0)
@@ -136,6 +151,7 @@ int main()
 
     // Fermer la socket du serveur
     close(server_socket);
+    printf("Serveur arrêté\n");
 
     return 0;
 }
