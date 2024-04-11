@@ -89,36 +89,22 @@ int main()
         else
         {
             printf("Message envoyé au serveur : %s\n", message);
-            char *token;
-            char filename[100];
-            char commande[100];
-
+            char *filename;
+            char *commande = malloc(1024);
+            strcpy(commande, message);
             // Utilisation de strtok() pour extraire les deux mots
-            token = strtok(message, " "); // Divise la chaîne par les espaces
-            if (token == NULL)
-            {
-                printf("Erreur lors de l'extraction du premier mot.\n");
-                return 1;
-            }
-            strcpy(commande, token); // Copie le premier mot dans la variable command
-
-            token = strtok(NULL, " "); // Récupère le deuxième mot
-            if (token == NULL)
-            {
-                printf("Erreur lors de l'extraction du deuxième mot.\n");
-                return 1;
-            }
-            strcpy(filename, token); // Copie le deuxième mot dans la variable filename
-
+            filename = strtok(commande, " "); // Divise la chaîne par les espaces
+            filename = strtok(NULL, " ");
             // Affichage des deux mots extraits
-            printf("Commande : %s\n", commande);
+            printf("Commande : %s\n", message);
             printf("Nom du fichier : %s\n", filename);
-
             if (!strcmp(commande, "get"))
             {
 
                 client_socket = connexion();
+                printf("Envoi de la commande get au serveur %s\n", message);
                 send_message(client_socket, message);
+                char buffer[1024] = {0};
                 receive_message(client_socket, buffer);
                 if (!strcmp(buffer, "Fichier introuvable"))
                 {
@@ -133,6 +119,7 @@ int main()
                     printf("Fichier %s téléchargé\n", filename);
                 }
                 close(client_socket);
+                free(commande);
             }
             else if (!strcmp(message, "put"))
             {

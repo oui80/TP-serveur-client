@@ -86,13 +86,17 @@ int main()
             close(client_socket);
             break;
         }
-
-        if (!strcmp(buffer, "get"))
+        char *command = strtok(buffer, " ");
+        if (!strcmp(command, "get"))
         {
             // Ouvrir le fichier demandé
-            char filename[10000];
-            read(client_socket, filename, 10000);
-            FILE *file = fopen(strcat("./data/", filename), "r");
+            char filename[100];
+            strcpy(filename, strtok(NULL, " "));
+
+            char file2[150] = "./data_serveur/";
+            strcat(file2, filename);
+            printf("Nom du fichier demandé : %s\n", file2);
+            FILE *file = fopen(file2, "r");
             if (file == NULL)
             {
                 write(client_socket, "Fichier introuvable", 20);
