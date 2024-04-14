@@ -192,41 +192,8 @@ int main()
                 client_socket = connexion();
                 printf("Envoi de la commande get au serveur %s\n", message);
                 send_message(client_socket, message);
-
-                // recoit la réponse du serveur
-                receive_message(client_socket, buffer);
-                if (!strcmp(buffer, "Fichier introuvable"))
-                {
-                    printf("Fichier introuvable\n");
-                }
-                else
-                {
-                    printf("Fichier trouvé\n");
-
-                    // création du fichier
-                    char filepath[256];
-                    snprintf(filepath, sizeof(filepath), "./data_client/%s", filename);
-
-                    FILE *file = fopen(filepath, "w");
-                    if (file == NULL)
-                    {
-                        perror("Erreur lors de la création du fichier");
-                        exit(EXIT_FAILURE);
-                    }
-
-                    // écriture du buffer dans le fichier
-                    size_t read_bytes;
-                    while ((read_bytes = read(client_socket, buffer, 1024)) > 0)
-                    {
-                        fwrite(buffer, 1, read_bytes, file);
-                    }
-
-                    // Fermer le fichier
-                    fclose(file);
-
-                    printf("Message du client : %s\n", commande);
-                    printf("Fichier %s téléchargé\n", filename);
-                }
+                receive_file(client_socket, filename);
+                printf("Fichier %s téléchargé\n", filename);
                 close(client_socket);
             }
         }
