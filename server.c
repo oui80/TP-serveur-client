@@ -136,6 +136,8 @@ int main()
             }
             else
             {
+                write(client_socket, "ready", 5);
+
                 char buffer[1024];
 
                 // Lire et envoyer successivement les paquets de données du fichier
