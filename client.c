@@ -146,46 +146,47 @@ int main()
 
             if (!strcmp(commande, "put"))
             {
-                client_socket = connexion();
-                send_message(client_socket, message);
                 char filepath[256];
                 snprintf(filepath, sizeof(filepath), "./data_client/%s", filename);
-
-                printf("Nom du fichier : %s\n", filepath);
-
-                // on recoit la réponse du serveur
-                receive_message(client_socket, buffer);
-                if (!strcmp(buffer, "ready"))
-                {
-                    printf("Envoi du fichier %s\n", filepath);
-                }
-                else
-                {
-                    printf("Erreur lors de l'envoi du fichier\n");
-                    close(client_socket);
-                    continue;
-                }
-
                 FILE *file = fopen(filepath, "r");
                 if (file == NULL)
                 {
                     perror("Erreur lors de l'ouverture du fichier");
-                    exit(EXIT_FAILURE);
                 }
-
-                // Envoi du fichier
-                char buffer[1024] = {0};
-                size_t read_bytes;
-                while ((read_bytes = fread(buffer, 1, 1024, file)) > 0)
+                else
                 {
-                    if (send(client_socket, buffer, read_bytes, 0) < 0)
+                    client_socket = connexion();
+                    send_message(client_socket, message);
+
+                    printf("Nom du fichier : %s\n", filepath);
+
+                    // on recoit la réponse du serveur
+                    receive_message(client_socket, buffer);
+                    if (!strcmp(buffer, "ready"))
                     {
-                        perror("Échec de l'envoi du fichier");
-                        exit(EXIT_FAILURE);
+                        printf("Envoi du fichier %s\n", filepath);
                     }
+                    else
+                    {
+                        printf("Erreur lors de l'envoi du fichier\n");
+                        close(client_socket);
+                        continue;
+                    }
+
+                    // Envoi du fichier
+                    char buffer[1024] = {0};
+                    size_t read_bytes;
+                    while ((read_bytes = fread(buffer, 1, 1024, file)) > 0)
+                    {
+                        if (send(client_socket, buffer, read_bytes, 0) < 0)
+                        {
+                            perror("Échec de l'envoi du fichier");
+                        }
+                    }
+
+                    fclose(file);
+                    close(client_socket);
                 }
-                fclose(file);
-                close(client_socket);
             }
             else if (!strcmp(commande, "get"))
             {

@@ -78,92 +78,91 @@ int main()
             }
             write(client_socket, liste, strlen(liste));
             // Fermer le répertoire
-            closedir(dir);
 
             printf("Message du client : %s\n", buffer);
+            closedir(dir);
         }
-
-        int l = 3;
-
-        char commande[l + 1];
-        strncpy(commande, buffer, l);
-        commande[l] = '\0';
-
-        // nom du fichier
-        int len = strlen(buffer);
-        char filename[len - l];
-
-        strncpy(filename, buffer + l + 1, len - l - 1);
-        filename[len - l - 1] = '\0';
-        char path[1024] = "./data_serveur/";
-        strcat(path, filename);
-        
-
-        if (strcmp(commande, "put") == 0)
+        else
         {
-            // on envoie ready au client
-            write(client_socket, "ready", 5);
+            int l = 3;
 
+            char commande[l + 1];
+            strncpy(commande, buffer, l);
+            commande[l] = '\0';
 
-            // création du fichier
-            FILE *file = fopen(path, "w");
-            if (file == NULL)
+            // nom du fichier
+            int len = strlen(buffer);
+            char filename[len - l];
+
+            strncpy(filename, buffer + l + 1, len - l - 1);
+            filename[len - l - 1] = '\0';
+            char path[1024] = "./data_serveur/";
+            strcat(path, filename);
+
+            if (strcmp(commande, "put") == 0)
             {
-                perror("Erreur lors de la création du fichier");
-                exit(EXIT_FAILURE);
-            }
-
-            // écriture du buffer dans le fichier
-            size_t read_bytes;
-            while ((read_bytes = read(client_socket, buffer, 1024)) > 0)
-            {
-                fwrite(buffer, 1, read_bytes, file);
-            }
-
-            // Fermer le fichier
-            fclose(file);
-
-            printf("Message du client : %s\n", commande);
-        }
-        else if (!strcmp(commande, "get"))
-        {
-            // Ouvrir le fichier demandé
-
-            FILE *file = fopen(path, "r");
-            if (file == NULL)
-            {
-                write(client_socket, "Fichier introuvable", 20);
-            }
-            else
-            {
+                // on envoie ready au client
                 write(client_socket, "ready", 5);
 
-                char buffer[1024];
-
-                // Lire et envoyer successivement les paquets de données du fichier
-                size_t bytes_read;
-                do
+                // création du fichier
+                FILE *file = fopen(path, "w");
+                if (file == NULL)
                 {
-                    bytes_read = fread(buffer, 1, 1024, file); // Lire un paquet de données du fichier
-                    if (bytes_read < 1024 && ferror(file))
-                    {
-                        perror("Erreur lors de la lecture du fichier");
-                        fclose(file);
-                        return 1;
-                    }
-                    // Envoyer le paquet de données au client via le socket
-                    if (write(client_socket, buffer, bytes_read) < 0)
-                    {
-                        perror("Erreur lors de l'envoi des données au client");
-                        fclose(file);
-                        return 1;
-                    }
-                } while (bytes_read == 1024);
+                    perror("Erreur lors de la création du fichier");
+                    exit(EXIT_FAILURE);
+                }
+
+                // écriture du buffer dans le fichier
+                size_t read_bytes;
+                while ((read_bytes = read(client_socket, buffer, 1024)) > 0)
+                {
+                    fwrite(buffer, 1, read_bytes, file);
+                }
+
+                // Fermer le fichier
                 fclose(file);
+
                 printf("Message du client : %s\n", commande);
             }
-        }
+            else if (!strcmp(commande, "get"))
+            {
+                // Ouvrir le fichier demandé
 
+                FILE *file = fopen(path, "r");
+                if (file == NULL)
+                {
+                    write(client_socket, "Fichier introuvable", 20);
+                }
+                else
+                {
+                    write(client_socket, "ready", 5);
+
+                    char buffer[1024];
+
+                    // Lire et envoyer successivement les paquets de données du fichier
+                    size_t bytes_read;
+                    do
+                    {
+                        bytes_read = fread(buffer, 1, 1024, file); // Lire un paquet de données du fichier
+                        if (bytes_read < 1024 && ferror(file))
+                        {
+                            perror("Erreur lors de la lecture du fichier");
+                            fclose(file);
+                            return 1;
+                        }
+                        // Envoyer le paquet de données au client via le socket
+                        if (write(client_socket, buffer, bytes_read) < 0)
+                        {
+                            perror("Erreur lors de l'envoi des données au client");
+                            fclose(file);
+                            return 1;
+                        }
+                    } while (bytes_read == 1024);
+                    fclose(file);
+                    printf("Message du client : %s\n", commande);
+                }
+            }
+        }
         if (strcmp(buffer, "exit") == 0)
         {
             printf("Fermeture de la connexion\n");
