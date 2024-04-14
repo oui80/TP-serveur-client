@@ -192,8 +192,22 @@ int main()
                 client_socket = connexion();
                 printf("Envoi de la commande get au serveur %s\n", message);
                 send_message(client_socket, message);
-                receive_file(client_socket, filename);
-                printf("Fichier %s téléchargé\n", filename);
+
+                // recoit la réponse du serveur
+                receive_message(client_socket, buffer);
+                if (!strcmp(buffer, "Fichier introuvable"))
+                {
+                    printf("Fichier introuvable\n");
+                }
+                else
+                {
+                    printf("Fichier trouvé\n");
+
+                    receive_file(client_socket, filename);
+
+                    printf("Message du client : %s\n", commande);
+                    printf("Fichier %s téléchargé\n", filename);
+                }
                 close(client_socket);
             }
         }
